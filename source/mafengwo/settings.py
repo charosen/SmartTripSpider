@@ -4,21 +4,38 @@
 Smart Trip project's spider global variblse settings.
 '''
 # 数据存储路径和文件名（.csv or .txt）配置变量：
-save_path = "./mafengwoResortsInfos"
-file_name = "HainanResorts"
+save_path = "./SmartTripData"
+
+# 数据文件名、同时是MySQL数据库表名、MongoDB数据库的集合名
+# file_name = "HainanResorts"
+file_name = "SanyaHotels"
+# file_name = "HainanRestaurants"
+
 # Neo4j数据库配置：
 NEO_CONF = {
+
+    # "host": "182.92.86.34", "port": 7687,
+    # "user": "omada", "password": "bupt@2018"
+
     "host": "localhost", "port": 7687,
     "user": "neo4j", "password": "Crz437991"
 }
 # MongoDB数据库配置：
-collection = "HainanResorts"
+# 改用file_name
+# collection = "HainanResorts"
+# collection = "HainanHotels"
+# collection = "HainanRestaurants"
+
 MONGO_CONF = {
     "host": "localhost", "port": 27017, "authSource": "test",
     "username": "test", "password": "Crz437991"
 }
 # MySQL数据库配置：
-table_name = "HainanResorts"
+# 改用file_name
+# table_name = "HainanResorts"
+# table_name = "HainanHotels"
+# table_name = "HainanRestaurants"
+
 SQL_CONF = {
     "host": "127.0.0.1",
     "port": 3306,
@@ -30,6 +47,7 @@ SQL_CONF = {
 
 
 # HTTP请求配置变量：
+# 可以链接fake-useragent成功时，使用fake-useragent库；不成功时用本地的user-agent；
 USER_AGENTS = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
     "Mozilla/4.0 (compatible; MSIE 7.0; AOL 9.5; AOLBuild 4337.35; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
@@ -63,5 +81,5 @@ TIMEOUT = (4, 4)
 
 # 代理配置变量
 PROXY_COUNT = 20
-PROXY_MAX = 60
+PROXY_MAX = 100
 PROXY_PUNISH = PROXY_MAX / 5
