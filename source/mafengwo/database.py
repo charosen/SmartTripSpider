@@ -101,24 +101,26 @@ class BaseSaver(object):
 
 
     # 数据存储方法：
-    def data_save(self, file_name):
+    def data_save(self, *file_name_iter):
         # 文档字符串
         '''
         Saves spider fetched data into different databases.
         Wipes out the old data and saves the new fetched ones.
 
         :Args:
-         - file_name : a str of file name to fetch data from and table/collection
-           name to save data in.
+         - *file_name_iter : a var-positional params of file name to fetch data from
+         and table/collection name to save data in.
 
         '''
         # 方法实现
         # 此处可以拓展成任意文件类型，其他文件类型的数据转换成json再写即可
-        file_path = os.path.join(save_path, file_name+'.json')
-        if not os.access(file_path, os.F_OK):
-            raise RuntimeError(f'数据文件{file_path}不存在，请检查数据！')
-        with open(file_path, 'r', encoding='utf-8') as file:
-            self.json_data = json.load(file, encoding='utf-8')
+        self.json_data = list()
+        for file_name in file_name_iter:
+            file_path = os.path.join(save_path, file_name+'.json')
+            if not os.access(file_path, os.F_OK):
+                raise RuntimeError(f'数据文件{file_path}不存在，请检查数据！')
+            with open(file_path, 'r', encoding='utf-8') as file:
+                self.json_data.extend(json.load(file, encoding='utf-8'))
 
         if self.save_mode == 'mongodb':
             print('>>> we are saving to mongodb.')
@@ -322,4 +324,4 @@ class CtripSaver(BaseSaver):
 # 测试代码：
 if __name__ == '__main__':
     saver = CtripSaver()
-    saver.data_save('HaikouHotels')
+    saver.data_save('HaikouHotels', 'SanyaHotels')
