@@ -14,9 +14,6 @@ file_name = "SanyaHotels"
 # Neo4j数据库配置：
 NEO_CONF = {
 
-    # "host": "182.92.86.34", "port": 7687,
-    # "user": "omada", "password": "bupt@2018"
-
     "host": "localhost", "port": 7687,
     "user": "neo4j", "password": "Crz437991"
 }
