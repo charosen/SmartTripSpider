@@ -88,12 +88,17 @@ class BaseSpider(object):
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         file_path = os.path.join(save_path, file_name+'.'+save_mode)
-        if save_mode == 'json':
-            with open(file_path, 'w', encoding='utf-8') as file:
+        with open(file_path, 'w', encoding='utf-8') as file:
+            if save_mode == 'json':
                 json.dump(self.data, file, ensure_ascii=False)
-        else:
-            # 此处可以拓展其他文件存储类型
-            pass
+            elif save_mode == 'txt':
+                # 只是初步用于QA问题爬取
+                # 对于txt模式存储，还需进一步思考和修改
+                for data in self.data:
+                    file.write(''.join([data, '\n']))
+            else:
+                # 此处可以拓展其他文件存储类型
+                pass
 
 
     # HTTP请求页面方法
@@ -132,21 +137,21 @@ class BaseSpider(object):
                 response.raise_for_status()
                 response.encoding = 'utf-8'
                 # html = response
-                # print('2>> Request Webpage Success.')
+                print('2>> Request Webpage Success.')
             except (Timeout, ProxyError, HTTPError,
                     ReadTimeout, TooManyRedirects) as e:
 
-                # print('2>> Exceptions Occured:', e)
-                # print(f'2>> Retries {num} times.')
+                print('2>> Exceptions Occured:', e)
+                print(f'2>> Retries {num} times.')
                 response = None
                 # self.proxyer.counter[self.proxy_url] -= PROXY_PUNISH
                 num += 1
                 if num > 10:
-                    # print('2>> Exceed maximum retry times.')
+                    print('2>> Exceed maximum retry times.')
                     # 日志记录
                     error = True
             except RequestException as e:
-                # print('2>> Exception Occured:', e)
+                print('2>> Exception Occured:', e)
                 # 日志记录
                 response = None
                 # self.proxyer.counter[self.proxy_url] -= PROXY_PUNISH
@@ -164,7 +169,8 @@ class BaseSpider(object):
 class MafengwoSpider(BaseSpider):
     # 文档字符串
     '''
-    MafengwoSpider class allows users to fetch all data from mafengwo websites.
+    MafengwoSpider class allows users to fetch all resort data from mafengwo
+    websites.
 
     :Usage:
 
@@ -181,6 +187,16 @@ class MafengwoSpider(BaseSpider):
 
     # 初始化方法
     def __init__(self, area_name='海南'):
+        # 文档字符串
+        '''
+        Initialize a new instance of the MafengwoSpider.
+
+        :Args:
+         - area_name : a str of Chinese area name which data are located
+         in.
+
+        '''
+        # 方法实现
         super(MafengwoSpider, self).__init__(area_name)
         self.links = list()
 
@@ -421,12 +437,27 @@ class MafengwoSpider(BaseSpider):
 # 携程旅游酒店爬虫子类
 class CtripSpider(BaseSpider):
     # 文档字符串
+    '''
+    CtripSpider class allows users to fetch all hotel data from ctrip websites.
 
+    :Usage:
+
+    '''
     # 类静态成员定义
     base_url = "https://hotels.ctrip.com/hotel/{}"
 
     # 初始化方法
     def __init__(self, area_name="sanya43"):
+        # 文档字符串
+        '''
+        Initialize a new instance of the CtripSpider.
+
+        :Args:
+         - area_name : a str of Chinese area name which data are located
+         in.
+
+        '''
+        # 方法实现
         # 设想：先翻译成英文-sanya，然后请求城市id-43
         super(CtripSpider, self).__init__(area_name)
         self.page_url = self.base_url.format(self.area_name)
@@ -723,6 +754,142 @@ class CtripSpider(BaseSpider):
         return item
 
 
+# 马蜂窝旅游问答爬虫子类
+class MafengwoQASpider(BaseSpider):
+    # 文档字符串
+    '''
+    MafengwoQASpider class allows users to fetch all questions from mafengwo
+    websites.
+
+    :Usage:
+
+    '''
+    # 类静态成员定义
+    accept_dict = {
+        'normal': ('text/html,application/xhtml+xml,application'
+                   '/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'),
+        'ajax': 'application/json, text/javascript, */*; q=0.01'
+    }
+    base_url = 'http://www.mafengwo.cn/wenda'
+    ajax_url = 'http://www.mafengwo.cn/qa/ajax_qa/more'
+
+    # 初始化方法
+    def __init__(self, area_name='area-12938'):
+        # 文档字符串
+        '''
+        Initialize a new instance of the MafengwoQASpider.
+
+        :Args:
+         - area_name : a str of Chinese area name which data are located
+         in.
+
+        '''
+        # 方法实现
+        super(MafengwoQASpider, self).__init__(area_name)
+        self.area_id = int(self.area_name.strip('area-'))
+        print(self.area_id)
+
+    # 爬虫主程序
+    def run(self, ):
+        # 文档字符串
+
+        # 方法实现
+        # 没加入差错控制机制，待更新
+        url = '/'.join([self.base_url, f'{self.area_name}.html'])
+        params = {'type': 3, 'mddid': self.area_id, 'sort': 8,
+                  'tid': '', 'time': '', 'key': ''}
+        response = self.request_html('GET', url, timeout=TIMEOUT,
+                                    headers=self.config_header('normal'))
+        self.data.extend(self.parse_question(response.text))
+        for page in range(self.get_page_num()):
+            print(f'>> parsing {page} questions.')
+            params.update(page=page)
+            response = self.request_html('GET', self.ajax_url, timeout=TIMEOUT,
+                            params=params, headers=self.config_header('ajax'))
+            if response.json().get('data'):
+                html = response.json()['data'].get('html')
+                if html:
+                    self.data.extend(self.parse_question(html))
+        print(len(self.data))
+        self.dump_data(save_mode='txt')
+
+    # HTTP请求头配置方法
+    def config_header(self, req_type):
+        # 文档字符串
+        '''
+        Loads MafegnwoQA's HTTP Requests Header with random User-Agents.
+
+        :Args:
+         - req_type : a str of request type `normal` or `ajax`.
+        :Returns:
+         - a dict of HTTP Requests Header.
+        '''
+        # 方法实现
+        # 可以使用python第三方库fake-useragent实现随机user-agent
+        useragent = random.choice(USER_AGENTS)
+        print('1> user agent:', useragent)
+        header = {
+            'Accept': self.accept_dict[req_type],
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Host': 'www.mafengwo.cn',
+            'Proxy-Connection': 'keep-alive',
+            'User-Agent': useragent
+        }
+        if req_type == 'normal':
+            header.update({'Cache-Control': 'max-age=0'})
+
+        return  header
+
+
+    # 获取问答异步加载页面数方法
+    def get_page_num(self):
+        # 文档字符串
+        '''
+        Get mafengwo's total question page number of given area_name.
+
+        :Returns:
+         - page_num : an int of mafengwo's total question page number.
+
+        '''
+        # 方法实现
+        # 参数准备
+        print('2>> Getting page num.')
+        params = {'type': 3, 'mddid': self.area_id, 'sort': 8, 'page': 1,
+                  'tid': '', 'time': '', 'key': ''}
+        response = None
+        total_num = None
+        while not (response and total_num):
+            response = self.request_html('GET', self.ajax_url, params=params,
+                            timeout=TIMEOUT, headers=self.config_header('ajax'))
+            if response:
+                if response.json().get('data'):
+                    total_num = response.json()['data'].get('total')
+        print('2>> Success getting page num.')
+        # 一次加载有20个数据
+        return (total_num//20)+1
+
+
+
+    # 解析问答数据方法
+    def parse_question(self, html):
+        # 文档字符串
+        '''
+        Parses given question page's info data, pack them into a list and return
+        them.
+
+        :Args:
+         - html : a str of html source code of given question page.
+
+        :Returns:
+         - a list of parsed question's info data.
+        '''
+        # 方法实现
+        return etree.HTML(html).xpath(('//li[contains(@class, "item clearfix")]'
+                                       '/div[@class="title"]/a/text()'))
+
+
+
 if __name__ == '__main__':
-    spider = CtripSpider('sanya43')
+    spider = MafengwoQASpider()
     spider.run()
