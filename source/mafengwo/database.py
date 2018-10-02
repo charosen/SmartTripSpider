@@ -10,12 +10,16 @@ from different website.
 
 
 # 导入模块：
+# 标准库导入
 import json
 import os
-import pymysql
 
-from pymongo import MongoClient
+# 相关第三方库导入
+import pymysql
+from pymongo import MongoClient as Client
 from py2neo import Node, Relationship, Graph
+
+# 本地库导入
 from settings import NEO_CONF, MONGO_CONF, SQL_CONF, save_path
 
 
@@ -67,6 +71,7 @@ class BaseSaver(object):
     '''
     # 数据存储器的静态成员定义
     SAVE_MODES = ('mongodb', 'neo4j', 'mysql')
+
     # 初始化方法：
     def __init__(self, save_mode="neo4j"):
         # 文档字符串
@@ -75,7 +80,8 @@ class BaseSaver(object):
 
         :Args:
          - save_mode : a str of database to save data in.
-         - create_sql : a str of table creating sql statement for MySQL database.
+         - create_sql : a str of table creating sql statement for MySQL
+           database.
 
         '''
         # 方法实现
@@ -85,7 +91,7 @@ class BaseSaver(object):
         if self.save_mode == 'mongodb':
             # mongodb initialize
             print('>>>> we are in mongodb.')
-            self.connector = MongoClient(**MONGO_CONF)[MONGO_CONF.get('authSource')]
+            self.connector = Client(**MONGO_CONF)[MONGO_CONF.get('authSource')]
         elif self.save_mode == 'neo4j':
             # neo4j initialize
             print('>>>> we are in neo4j.')
@@ -99,7 +105,6 @@ class BaseSaver(object):
             # Neo4j数据库同理（什么也没做）
             # self.create_sql = RESORT_SQL
 
-
     # 数据存储方法：
     def data_save(self, *file_name_iter):
         # 文档字符串
@@ -108,9 +113,8 @@ class BaseSaver(object):
         Wipes out the old data and saves the new fetched ones.
 
         :Args:
-         - *file_name_iter : a var-positional params of file name to fetch data from
-         and table/collection name to save data in.
-
+         - *file_name_iter : a var-positional params of file name to fetch data
+         from and table/collection name to save data in.
         '''
         # 方法实现
         # 此处可以拓展成任意文件类型，其他文件类型的数据转换成json再写即可
@@ -155,16 +159,13 @@ class BaseSaver(object):
                 cursor.executemany(sql, self.json_data)
                 self.connector.commit()
 
-
     # 知识图谱删除方法：
     def graph_cleaner(self):
         pass
 
-
     # 知识图谱生成方法：
     def graph_builder(self):
         pass
-
 
     # 数据存储器退出方法：
     def __del__(self):
@@ -188,21 +189,19 @@ class MafengwoSaver(BaseSaver):
     '''
     Defines a MafengwoSaver class inherited from BaseSaver class.
 
-    MafengwoSaver class allows users to save all resorts infos data fetched from
-    mafengwo website.
+    MafengwoSaver class allows users to save all resorts infos data fetched
+    from mafengwo website.
 
     :Usage:
 
     '''
     # 数据存储器静态成员定义
 
-
     # 初始化方法
     def __init__(self, save_mode="neo4j"):
         super(MafengwoSaver, self).__init__(save_mode)
         if self.save_mode == "mysql":
             self.create_sql = RESORT_SQL
-
 
     # 知识图谱删除方法
     def graph_cleaner(self):
@@ -214,17 +213,17 @@ class MafengwoSaver(BaseSaver):
         Detachs isLocateOf relationship, then deletes locate nodes and resort
         nodes.
         '''
-        self.connector.run("match (n:locate)-[]->(m:resort) detach delete n, m")
-
+        self.connector.run("match (n:locate)-[]-(m:resort) detach delete n, m")
 
     # 知识图谱生成方法
     def graph_builder(self):
         # 文档字符串
         '''
-        Builds a knowledge graph of mafengwo resorts data in Graph Database Neo4j.
+        Builds a knowledge graph of mafengwo resorts data in Graph Database
+        Neo4j.
 
-        Creates locate nodes and resort nodes, then creates isLocateOf relationship
-        between them.
+        Creates locate nodes and resort nodes, then creates isLocateOf
+        relationship between them.
         '''
         # 方法实现
         for info in self.json_data:
@@ -238,7 +237,8 @@ class MafengwoSaver(BaseSaver):
             areaNode = Node("locate", **areaInfo)
             resortNode = Node("resort", **info)
             self.connector.create(areaNode | resortNode)
-            self.connector.merge(Relationship(areaNode, 'isLocateOf', resortNode))
+            self.connector.merge(Relationship(areaNode, 'isLocateOf',
+                                              resortNode))
 
 
 # 携程酒店数据存储器子类
@@ -256,13 +256,11 @@ class CtripSaver(BaseSaver):
 
     # 类静态成员定义
 
-
     # 初始化方法
     def __init__(self, save_mode="neo4j"):
         super(CtripSaver, self).__init__(save_mode)
         if self.save_mode == "mysql":
             self.create_sql = HOTEL_SQL
-
 
     # 知识图谱删除方法
     def graph_cleaner(self):
@@ -276,7 +274,6 @@ class CtripSaver(BaseSaver):
         '''
         # 方法实现
         self.connector.run("match (n)-[]-(m:hotel) detach delete n, m")
-
 
     # 知识图谱生成方法
     def graph_builder(self):
@@ -302,23 +299,19 @@ class CtripSaver(BaseSaver):
             policy_info = info.pop('hotel_policy')
             # 准备酒店周边设施节点属性
             surround_info = info.pop('surround_facilities')
-            #创建节点
+            # 创建节点
             area_node = Node("located", **area_info)
             hotel_node = Node("hotel", **info)
-            facilities_node = Node("facilities", **facilities_info)
+            facility_node = Node("facilities", **facilities_info)
             policy_node = Node("policy", **policy_info)
             surround_node = Node("surround", **surround_info)
-            self.connector.create(area_node | hotel_node | facilities_node | \
-                           policy_node | surround_node)
-            self.connector.merge(Relationship(area_node,'isLocateOf',hotel_node) \
-                      | Relationship(hotel_node,'hasFacilities',facilities_node) \
-                      | Relationship(hotel_node,'hasPolicy',policy_node) \
-                      | Relationship(hotel_node,'hasSurround', surround_node))
-
-
-
-
-
+            self.connector.create(area_node | hotel_node | facility_node |
+                                  policy_node | surround_node)
+            self.connector.merge(
+                    Relationship(area_node, 'isLocateOf', hotel_node)
+                    | Relationship(hotel_node, 'hasFacilities', facility_node)
+                    | Relationship(hotel_node, 'hasPolicy', policy_node)
+                    | Relationship(hotel_node, 'hasSurround', surround_node))
 
 
 # 测试代码：

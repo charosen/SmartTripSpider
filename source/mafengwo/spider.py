@@ -36,6 +36,7 @@ class BaseSpider(object):
     '''
     # 类静态成员定义
     SAVE_MODES = ('json', 'txt')
+
     # 初始化方法
     def __init__(self, area_name='海南'):
         # 文档字符串
@@ -54,11 +55,9 @@ class BaseSpider(object):
         # 初始化爬虫代理
         # self.proxyer = SpiderProxy()
 
-
     # HTTP请求头配置方法
     def config_header(self, host):
         pass
-
 
     #  HTTP请求代理配置方法
     def config_proxy(self):
@@ -68,8 +67,6 @@ class BaseSpider(object):
             'http': 'http://' + self.proxy_url,
             'https': 'https://' + self.proxy_url
          }
-
-
 
     # 数据存储方法
     def dump_data(self, save_mode='json'):
@@ -100,7 +97,6 @@ class BaseSpider(object):
                 # 此处可以拓展其他文件存储类型
                 pass
 
-
     # HTTP请求页面方法
     def request_html(self, method, url, **kwargs):
         # 文档字符串
@@ -112,16 +108,16 @@ class BaseSpider(object):
         times or other exceptions occured, return None.
 
         :Args:
-         - method : method for new HTTP Requests supported by the :class`Request`
+         - method : method for new HTTP Requests supported by the :class
+           `Request` object in `requests` module.
+         - url : URL for new HTTP Requests supported by the :class`Request`
            object in `requests` module.
-         - url : URL for new HTTP Requests supported by the :class`Request` object
-           in `requests` module.
-         - **kwargs : key words arguments supported by the :class:`Request` object
-           in `requests` module.
+         - **kwargs : key words arguments supported by the :class:`Request`
+           object in `requests` module.
 
         :Returns:
-         - html : a :class:`Response` if request suceeded or None if exceptions
-           occured.
+         - html : a :class:`Response` if request suceeded or None if
+           exceptions occured.
 
         '''
         # 方法实现
@@ -184,7 +180,6 @@ class MafengwoSpider(BaseSpider):
         "交通": "transInfo", "门票": "ticketsInfo", "开放时间": "openInfo",
      }
 
-
     # 初始化方法
     def __init__(self, area_name='海南'):
         # 文档字符串
@@ -200,16 +195,15 @@ class MafengwoSpider(BaseSpider):
         super(MafengwoSpider, self).__init__(area_name)
         self.links = list()
 
-
     # 爬虫主程序
     def run(self):
         # 文档字符串
         '''
         Main spider method of MafengwoSpider.
 
-        Fetches all resorts links, parses every resort website according to their
-        links then packes all dictionary formatted resorts' info data into a data
-        list.
+        Fetches all resorts links, parses every resort website according to
+        their links then packes all dictionary formatted resorts' info data
+        into a data list.
         '''
         # error counter variable
         start = time.time()
@@ -224,8 +218,9 @@ class MafengwoSpider(BaseSpider):
             # time.sleep(random.randint(1,3))
             if html:
                 while True:
-                    test = etree.HTML(html.text).xpath(('//div[@class="row row-top" '
-                                                        'or @data-anchor="overview"]'))
+                    test = etree.HTML(html.text).xpath(
+                            '//div[@class="row row-top" '
+                            'or @data-anchor="overview"]')
                     if len(test) == 2:
                         print(f'>>>> Success getting resort {link}.')
                         self.data.append(self.parse_resort(html.text))
@@ -260,7 +255,6 @@ class MafengwoSpider(BaseSpider):
         # print(len(self.links))
         # print(len(self.data))
 
-
     # HTTP请求头配置方法
     def config_header(self, host_key):
         # 文档字符串
@@ -287,7 +281,6 @@ class MafengwoSpider(BaseSpider):
             'Proxy-Connection': 'keep-alive',
         }
 
-
     # 获取所有景点链接方法
     def get_links(self, pStart=1, pEnd=50):
         # 文档字符串
@@ -308,29 +301,31 @@ class MafengwoSpider(BaseSpider):
         for page in range(pStart, pEnd+1):
             print(f'>>> Getting page {page}')
             req_param = {'p': page, 'q': self.area_name}
-            html = self.request_html('GET', self.base_url, params=req_param,
-                                            timeout=TIMEOUT,
-                                            # proxies=self.config_proxy(),
-                                            headers=self.config_header('www'))
+            html = self.request_html('GET', self.base_url,
+                                     params=req_param, timeout=TIMEOUT,
+                                     # proxies=self.config_proxy(),
+                                     headers=self.config_header('www'))
             # time.sleep(random.randint(1,3))
             # time.sleep(1)
             if html:
                 while True:
                     selector = etree.HTML(html.text)
-                    elements = selector.xpath('//div[@class="att-list"]/ul/li/div/div[2]/h3/a')
+                    elements = selector.xpath('//div[@class="att-list"]/ul'
+                                              '/li/div/div[2]/h3/a')
                     print('>>> links count:', len(elements))
                     if len(elements) == 15:
                         print(f'>>> Success getting page {page}.')
-                        self.links.extend([e.get('href') for e in elements if '景点' in e.text])
+                        self.links.extend([e.get('href') for e
+                                           in elements if '景点' in e.text])
                         break
                     # 走到这里的时候说明代理ip被禁了，换新ip重新请求一次
                     # 相信代理ip池中一定有可靠ip，因此不会出现死循环
                     self.proxyer.counter[self.proxy_url] -= PROXY_PUNISH
                     print('>>> getting wrong page content. Retrise again!')
-                    html = self.request_html('GET', self.base_url, params=req_param,
-                                                    timeout=TIMEOUT,
-                                                    # proxies=self.config_proxy(),
-                                                    headers=self.config_header('www'))
+                    html = self.request_html('GET', self.base_url,
+                                             params=req_param, timeout=TIMEOUT,
+                                             # proxies=self.config_proxy(),
+                                             headers=self.config_header('www'))
             else:
                 print(f'>>> Failure getting page {page}.')
                 # 防止网络不可靠情况下，爬虫一直运行下去：
@@ -346,7 +341,6 @@ class MafengwoSpider(BaseSpider):
                     else:
                         raise ValueError('NetWork Unavailable!')
         # print(self.links)
-
 
     # 解析景点数据方法
     def parse_resort(self, html):
@@ -384,15 +378,17 @@ class MafengwoSpider(BaseSpider):
             'timeStamp': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         }
 
-        row_top, overview = etree.HTML(html).xpath(('//div[@class="row row-top" '
-                                                    'or @data-anchor="overview"]'))
+        row_top, overview = etree.HTML(html).xpath(
+                                    '//div[@class="row row-top" '
+                                    'or @data-anchor="overview"]')
 
         mod_detail = overview.xpath('//div[@class="mod mod-detail"]')
         if len(mod_detail) == 1:
             for dl in mod_detail[0].xpath('dl'):
                 dt, dd = dl
                 # transform keys and insert key-value pair into dict.
-                item[self.key_convert.get(dt.text)] = dd.xpath('string()').strip()
+                item[self.key_convert.get(dt.text)] = dd.xpath(
+                                                          'string()').strip()
 
             intro = mod_detail[0].xpath('div[@class="summary"]')
             if len(intro) == 1:
@@ -403,10 +399,12 @@ class MafengwoSpider(BaseSpider):
                 for li in base_info[0].xpath('li'):
                     # print(li.get('class'))
                     content = li.xpath('div[@class="content"]').pop()
-                    item[li.get('class').replace('-', '_')] = content.xpath('string()').strip()
+                    item[li.get('class').replace('-', '_')] = content.xpath(
+                                                            'string()').strip()
         # 后面可以改改
         a = row_top.xpath('//div[@class="drop"]/span/a').pop()
-        item['resortName'] = row_top.xpath('//div[@class="title"]/h1/text()').pop()
+        item['resortName'] = row_top.xpath('//div[@class="title"]'
+                                           '/h1/text()').pop()
         item['areaName'] = a.text
         item['areaId'] = int(re.search('(\d+)\.html', a.get('href'))[1])
 
@@ -419,7 +417,8 @@ class MafengwoSpider(BaseSpider):
                                              params={'params': poi},
                                              timeout=TIMEOUT,
                                              # proxies=self.config_proxy(),
-                                             headers=self.config_header('pagelet'))
+                                             headers=self.config_header(
+                                                                   'pagelet'))
                 apiData = response.json()['data']
             except:
                 print('>> acquired location fail! Retries Again.')
@@ -474,21 +473,27 @@ class CtripSpider(BaseSpider):
         for page in range(1, self.get_page_num()):
             # print(f'4>>>> parsing hotels list page {page}')
             elements = None
-            html = self.request_html('GET', '/'.join([self.page_url, f'p{page}']),
-                                   timeout=TIMEOUT,headers=self.config_header())
+            html = self.request_html('GET',
+                                     '/'.join([self.page_url, f'p{page}']),
+                                     headers=self.config_header(),
+                                     timeout=TIMEOUT)
             if html:
                 while True:
                     selector = etree.HTML(html.text)
-                    elements = selector.xpath("//div[contains(@class,'hotel_new_list')]")
+                    elements = selector.xpath("//div[contains(@class"
+                                              ",'hotel_new_list')]")
                     if len(elements):
-                        # print(f'4>>>> Success parsing hotel list page {page}')
+                        # print(f'4>>>> Success parsing hotel list page{page}')
                         break
                     # 走到这里的时候说明代理ip被禁了，换新ip重新请求一次
                     # 相信代理ip池中一定有可靠ip，因此不会出现死循环
                     # self.proxyer.counter[self.proxy_url] -= PROXY_PUNISH
                     print('4>>>> getting wrong page content. Retrise again!')
-                    html = self.request_html('GET', '/'.join(self.page_url, f'p{page}'),
-                                           timeout=TIMEOUT,headers=self.config_header())
+                    html = self.request_html('GET',
+                                             '/'.join(self.page_url,
+                                                      f'p{page}'),
+                                             timeout=TIMEOUT,
+                                             headers=self.config_header())
                 for elem in elements:
                     self.data.append(self.parse_hotel(elem))
             else:
@@ -510,7 +515,6 @@ class CtripSpider(BaseSpider):
         end = time.time()
         print(end-start)
         self.dump_data('json')
-
 
     # HTTP请求头配置方法
     def config_header(self):
@@ -537,7 +541,6 @@ class CtripSpider(BaseSpider):
             'User-Agent': useragent,
         }
 
-
     # 获取未来n天日期的方法
     def get_recent_date(self, n):
         # 文档字符串
@@ -555,7 +558,6 @@ class CtripSpider(BaseSpider):
         delta_day = datetime.timedelta(days=n)
         return str(today+delta_day)
 
-
     # 获取酒店页面数方法
     def get_page_num(self):
         # 文档字符串
@@ -571,11 +573,11 @@ class CtripSpider(BaseSpider):
         page_str = None
         while not (html and page_str):
             html = self.request_html('GET', self.page_url, timeout=TIMEOUT,
-                                            headers=self.config_header())
+                                     headers=self.config_header())
             if html:
                 selector = etree.HTML(html.text)
-                page_str = selector.xpath(("string(//div[@class='page_box']"
-                                       "//a[@rel='nofollow'])"))
+                page_str = selector.xpath("string(//div[@class='page_box']"
+                                          "//a[@rel='nofollow'])")
         # print('2>> Success getting page num.')
         return int(page_str)
 
@@ -598,7 +600,8 @@ class CtripSpider(BaseSpider):
         # print('3>>> start parsing hotel.')
         item = {
             'hotel_id': int(elem.xpath("@id").pop()),
-            'hotel_name': elem.xpath(".//h2[@class='hotel_name']/a/@title").pop(),
+            'hotel_name': elem.xpath(".//h2[@class='hotel_name'"
+                                     "]/a/@title").pop(),
             'address': elem.xpath((".//p[@class='hotel_item_htladdress"
                                    "']/text()")).pop().strip('】 '),
             'business_zone': elem.xpath((".//p[@class='hotel_item_htladdress"
@@ -619,9 +622,9 @@ class CtripSpider(BaseSpider):
             'sale_amount': 0,
             'reserve_count': 0
         }
-        ico, label, judge = elem.xpath((".//span[@class='hotel_ico']"
-                                        "|.//span[@class='special_label']"
-                                        "|.//div[@class='hotelitem_judge_box']"))
+        ico, label, judge = elem.xpath(".//span[@class='hotel_ico']"
+                                       "|.//span[@class='special_label']"
+                                       "|.//div[@class='hotelitem_judge_box']")
         # print(etree.tostring(ico, encoding='utf-8').decode('utf-8'))
         # 更新携程质量担保字段
         if len(ico.xpath('./span[@class="ico_quality_gold"]')) == 1:
@@ -632,11 +635,13 @@ class CtripSpider(BaseSpider):
         if len(corporate) == 1:
             item['ctrip_corporate'] = corporate.pop().get("class")
         # 更新携程酒店星级字段
-        ctrip_star = ico.xpath("./span[contains(@class,'hotel_diamond')]/@class")
+        ctrip_star = ico.xpath("./span[contains(@class,'hotel_diamond')]"
+                               "/@class")
         if len(ctrip_star) == 1:
             item['ctrip_star'] = int(ctrip_star[0].strip('hotel_diamond'))
         # 更新国家酒店星级字段
-        country_star = ico.xpath("./span[contains(@class,'hotel_stars')]/@class")
+        country_star = ico.xpath("./span[contains(@class,'hotel_stars')]"
+                                 "/@class")
         if len(country_star) == 1:
             item['country_star'] = int(country_star[0].strip('hotel_stars'))
         # 更新酒店标签字段
@@ -650,15 +655,18 @@ class CtripSpider(BaseSpider):
         if len(hotel_score) > 0:
             item['hotel_score'] = float(hotel_score)
         # 更新酒店推荐率字段
-        hotel_propo = judge.xpath('string(.//span[@class="total_judgement_score"]/span)')
+        hotel_propo = judge.xpath('string(.//span[@class='
+                                  '"total_judgement_score"]/span)')
         if len(hotel_propo) > 0:
             item['hotel_proposition'] = int(hotel_propo.strip('%')) / 100
         # 更新酒店评价人数字段
-        judge_count = judge.xpath('string(.//span[@class="hotel_judgement"]/span)')
+        judge_count = judge.xpath('string(.//span[@class='
+                                  '"hotel_judgement"]/span)')
         if len(judge_count) > 0:
             item['judge_count'] = int(judge_count)
             item['sale_amount'] = item['lowest_price'] * item['judge_count']
-            item['reserve_count'] = item['hotel_proposition']*item['judge_count']
+            item['reserve_count'] = (item['hotel_proposition']
+                                     * item['judge_count'])
         # 更新酒店总评字段
         recommend = judge.xpath('string(.//span[@class="recommend"])')
         if len(recommend) > 0:
@@ -676,7 +684,6 @@ class CtripSpider(BaseSpider):
         item.update(self.parse_hotel_detail(hotel_url))
         return item
 
-
     # 解析酒店详情数据方法
     def parse_hotel_detail(self, url):
         # 文档字符串
@@ -686,7 +693,9 @@ class CtripSpider(BaseSpider):
         :Args:
          - url : a str of specified hotel's detail website.
         :Returns:
-         - a dict of completary key-value pairs extract from hotel's detail info.
+         - a dict of completary key-value pairs extract from hotel's detail
+           info.
+
         '''
         # 方法实现
         item = {
@@ -697,15 +706,16 @@ class CtripSpider(BaseSpider):
             "surround_facilities": dict()
         }
         params = dict(isFull='F', checkin=self.get_recent_date(1),
-                                  checkout=self.get_recent_date(2))
+                      checkout=self.get_recent_date(2))
         # print('2> params:', params)
         # print('3>>> getting hotel detail:', url)
         hotel_info = None
         html = self.request_html('GET', url, timeout=TIMEOUT, params=params,
-                                             headers=self.config_header())
+                                 headers=self.config_header())
         if html:
             while True:
-                hotel_info = etree.HTML(html.text).xpath('//div[@id="hotel_info_comment"]')
+                hotel_info = etree.HTML(html.text).xpath('//div[@id="hotel_'
+                                                         'info_comment"]')
                 if len(hotel_info) == 1:
                     # print('3>>> success getting detail:', url)
                     break
@@ -713,20 +723,25 @@ class CtripSpider(BaseSpider):
                 # 相信代理ip池中一定有可靠ip，因此不会出现死循环
                 # self.proxyer.counter[self.proxy_url] -= PROXY_PUNISH
                 print('3>>> getting wrong hotel detail. Retries again!')
-                html = self.request_html('GET', url, timeout=TIMEOUT,
-                                    params=params, headers=self.config_header())
+                html = self.request_html('GET', url,
+                                         timeout=TIMEOUT, params=params,
+                                         headers=self.config_header())
 
             # 解析详情
             hotel_intro = hotel_info[0].xpath('.//div[@id="htlDes"]')
             if len(hotel_intro) == 1:
-                phone = hotel_intro[0].xpath('string(.//span[@data-real]/@data-real)')
+                phone = hotel_intro[0].xpath('string(.//span[@data-real]'
+                                             '/@data-real)')
                 if len(phone) > 0:
                     pattern = '(\(\d{3,4}\)|\d{3,4}-|\s)?\d{8}'
-                    item.update(contact=re.search(pattern, phone.strip()).group(0))
-                intro = hotel_intro[0].xpath('string(.//span[@itemprop="description"])')
+                    item.update(contact=re.search(pattern,
+                                                  phone.strip()).group(0))
+                intro = hotel_intro[0].xpath('string(.//span[@itemprop='
+                                             '"description"])')
                 if len(intro) > 0:
                     item.update(introduction=intro.strip())
-            hotel_facility = hotel_info[0].xpath(".//div[@id='J_htl_facilities']")
+            hotel_facility = hotel_info[0].xpath(".//div[@id="
+                                                 "'J_htl_facilities']")
             if len(hotel_facility) == 1:
                 for tr in hotel_facility[0].xpath('.//tr[@data-init]'):
                     key = tr.xpath('string(./th)')
@@ -799,13 +814,14 @@ class MafengwoQASpider(BaseSpider):
         params = {'type': 3, 'mddid': self.area_id, 'sort': 8,
                   'tid': '', 'time': '', 'key': ''}
         response = self.request_html('GET', url, timeout=TIMEOUT,
-                                    headers=self.config_header('normal'))
+                                     headers=self.config_header('normal'))
         self.data.extend(self.parse_question(response.text))
         for page in range(self.get_page_num()):
             print(f'>> parsing {page} questions.')
             params.update(page=page)
-            response = self.request_html('GET', self.ajax_url, timeout=TIMEOUT,
-                            params=params, headers=self.config_header('ajax'))
+            response = self.request_html('GET', self.ajax_url,
+                                         timeout=TIMEOUT, params=params,
+                                         headers=self.config_header('ajax'))
             if response.json().get('data'):
                 html = response.json()['data'].get('html')
                 if html:
@@ -839,8 +855,7 @@ class MafengwoQASpider(BaseSpider):
         if req_type == 'normal':
             header.update({'Cache-Control': 'max-age=0'})
 
-        return  header
-
+        return header
 
     # 获取问答异步加载页面数方法
     def get_page_num(self):
@@ -860,8 +875,9 @@ class MafengwoQASpider(BaseSpider):
         response = None
         total_num = None
         while not (response and total_num):
-            response = self.request_html('GET', self.ajax_url, params=params,
-                            timeout=TIMEOUT, headers=self.config_header('ajax'))
+            response = self.request_html('GET', self.ajax_url,
+                                         params=params, timeout=TIMEOUT,
+                                         headers=self.config_header('ajax'))
             if response:
                 if response.json().get('data'):
                     total_num = response.json()['data'].get('total')
@@ -869,14 +885,12 @@ class MafengwoQASpider(BaseSpider):
         # 一次加载有20个数据
         return (total_num//20)+1
 
-
-
     # 解析问答数据方法
     def parse_question(self, html):
         # 文档字符串
         '''
-        Parses given question page's info data, pack them into a list and return
-        them.
+        Parses given question page's info data, pack them into a list and
+        return them.
 
         :Args:
          - html : a str of html source code of given question page.
@@ -885,9 +899,8 @@ class MafengwoQASpider(BaseSpider):
          - a list of parsed question's info data.
         '''
         # 方法实现
-        return etree.HTML(html).xpath(('//li[contains(@class, "item clearfix")]'
-                                       '/div[@class="title"]/a/text()'))
-
+        return etree.HTML(html).xpath('//li[contains(@class, "item clearfix")]'
+                                      '/div[@class="title"]/a/text()')
 
 
 if __name__ == '__main__':

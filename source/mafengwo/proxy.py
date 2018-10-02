@@ -3,14 +3,19 @@
 
 # 模块字符串
 '''
-Define a SpiderProxy class allows users to use IPProxyPool API for their spider.
+Define a SpiderProxy class allows users to use IPProxyPool API for their
+spider.
 '''
 
 # 导入模块：
-import requests
+# 标准库导入
 import json
 import random
 
+# 第三方库导入
+import requests
+
+# 本地库导入
 from settings import TIMEOUT, PROXY_COUNT, PROXY_MAX
 
 # 全局变量：
@@ -29,6 +34,7 @@ class SpiderProxy(object):
 
     # 类静态成员定义
     api_url = "http://127.0.0.1:8000/"
+
     # 初始化方法
     def __init__(self):
         # 文档字符串
@@ -40,7 +46,6 @@ class SpiderProxy(object):
         self.counter = dict()
         self.get_proxy()
 
-
     # 请求IPProxyPool API方法
     def request_api(self, url, **para):
         # 文档字符串
@@ -48,7 +53,8 @@ class SpiderProxy(object):
         Sends HTTP Requests to IPProxyPool API.
 
         If Timeout exception occured, retries HTTP Request 10 times;
-        If retry exceeded 10 times or other exceptions occured, raise exception.
+        If retry exceeded 10 times or other exceptions occured, raise
+        exception.
 
         :Args:
          - url : a str of IPProxyPool API Url.
@@ -82,7 +88,6 @@ class SpiderProxy(object):
                 # time.sleep(1)
         return json.loads(str_proxies)
 
-
     # 获取代理IP方法
     def get_proxy(self):
         # 文档字符串
@@ -94,7 +99,8 @@ class SpiderProxy(object):
         for type_num in range(2):
             raw_proxies.extend(self.request_api(self.api_url, types=type_num,
                                                 count=ac_num, country='国内'))
-            print(f'>> acquired types = {type_num} proxies number:', len(raw_proxies))
+            print(f'>> acquired types = {type_num} '
+                  f'proxies number: {len(raw_proxies)}')
             if len(raw_proxies) == PROXY_COUNT:
                 break
             ac_num = PROXY_COUNT - len(raw_proxies)
@@ -108,7 +114,6 @@ class SpiderProxy(object):
         print(self.counter)
         print('>>> success getting proxies.')
 
-
     def delete_proxy(self, url):
         # 文档字符串
         '''
@@ -120,7 +125,7 @@ class SpiderProxy(object):
         '''
         # 方法实现
         print('>>> delete proxy:', url)
-        ip= url.split(':')[0]
+        ip = url.split(':')[0]
         print('>>> delete ip:', ip)
         self.request_api(''.join([self.api_url, 'delete']), ip=ip)
         for i in range(len(self.proxies)-1, -1, -1):
@@ -129,7 +134,6 @@ class SpiderProxy(object):
         self.counter.pop(url)
         print(self.proxies)
         print('>>> success deleting proxy:', url)
-
 
     def pop_proxy(self):
         # 文档字符串

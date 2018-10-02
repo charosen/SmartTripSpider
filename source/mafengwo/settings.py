@@ -8,11 +8,14 @@ save_path = "./SmartTripData"
 
 # 数据文件名、同时是MySQL数据库表名、MongoDB数据库的集合名
 # file_name = "HainanResorts"
-file_name = "SanyaHotels"
+file_name = "MafengwoQA"
 # file_name = "HainanRestaurants"
 
 # Neo4j数据库配置：
 NEO_CONF = {
+
+    # "host": "182.92.86.34", "port": 7687,
+    # "user": "omada", "password": "bupt@2018"
 
     "host": "localhost", "port": 7687,
     "user": "neo4j", "password": "Crz437991"
