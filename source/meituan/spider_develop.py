@@ -21,7 +21,6 @@ from py2neo import Graph, Node
 from settings import headers,savePath,filename,mongoConf,collection,limit,neoConf,logPath
 
 
-
 class MeituanSpider(object):
     '''
     MeituanSpider class allows you to fetch all data from meituan api website.
@@ -31,8 +30,8 @@ class MeituanSpider(object):
     '''
 
     baseUrl = ("http://api.meituan.com/group/v4/deal/select/city/94/cate/1?"
-                "sort=solds&hasGroup=true&mpt_cate1=1&offset={0}&limit={1}")
-    modeList = ['txt','csv','mongodb', 'neo4j']
+               "sort=solds&hasGroup=true&mpt_cate1=1&offset={0}&limit={1}")
+    modeList = ['txt', 'csv', 'mongodb', 'neo4j']
     fieldKey = ['店铺名称','页面id','类别','品牌名称','品牌id','品牌logo','评分',
                 '平均价格','最低价格','所属地区','地区Id','纬度','经度','详细地址',
                 '楼层','地铁站id','停车信息','优惠套餐情况','营业时间','联系电话',
@@ -40,7 +39,7 @@ class MeituanSpider(object):
                 '历史订单数','wifi','支持预定']
     poiList = list()
 
-    #美团海口地区美食爬虫
+    # 美团海口地区美食爬虫
     def __init__(self, saveMode='txt'):
         '''
         The constructor of MeituanSpider classself.
