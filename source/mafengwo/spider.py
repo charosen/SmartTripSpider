@@ -903,6 +903,191 @@ class MafengwoQASpider(BaseSpider):
                                       '/div[@class="title"]/a/text()')
 
 
+class BaiduPoiSpider(BaseSpider):
+    # 文档字符串
+    '''
+    BaiduPoiSpider class allows users to fetch all kinds of poi data provided
+    by Baidu API.
+
+    :Usage:
+
+    '''
+    # 类静态成员定义
+    city_coord = {
+        "海口": [(19.926987, 110.157237), (20.145149, 110.572326)],
+    }
+    LEGAL_TAGS = ["美食", "中餐厅", "外国餐厅", "小吃快餐店", "蛋糕甜品店", "咖啡厅",
+            "茶座", "酒吧", "酒店", "星级酒店", "快捷酒店", "公寓式酒店", "购物",
+            "购物中心", "百货商场", "超市", "便利店", "家居建材", "家电数码", "商铺",
+            "集市", "生活服务", "通讯营业厅", "邮局", "物流公司", "售票处", "洗衣店",
+            "图文快印店", "照相馆", "房产中介机构", "公用事业", "维修点", "家政服务",
+            "殡葬服务", "彩票销售点", "宠物服务", "报刊亭", "公共厕所", "丽人", "美容",
+            "美发", "美甲", "美体", "旅游景点", "公园", "动物园", "植物园", "游乐园",
+            "博物馆", "水族馆", "海滨浴场", "文物古迹", "教堂", "风景区", "休闲娱乐",
+            "度假村", "农家院", "电影院", "KTV", "剧院", "歌舞厅", "网吧", "游戏场所",
+            "洗浴按摩", "休闲广场", "运动健身", "体育场馆", "极限运动场所", "健身中心",
+            "教育培训", "高等院校", "中学", "小学", "幼儿园", "成人教育", "亲子教育",
+            "特殊教育学校", "留学中介机构", "科研机构", "培训机构", "图书馆", "科技馆",
+            "文化传媒", "新闻出版", "广播电视", "艺术团体", "美术馆", "展览馆",
+            "文化宫", "医疗", "综合医院", "专科医院", "诊所", "药店", "体检机构",
+            "疗养院", "急救中心", "疾控中心", "汽车服务", "汽车销售", "汽车维修",
+            "汽车美容", "汽车配件", "汽车租赁", "汽车检测场", "交通设施", "飞机场",
+            "火车站", "地铁站", "地铁线路", "长途汽车站", "公交车站", "公交线路",
+            "港口", "停车场", "加油加气站", "服务区", "收费站", "桥", "充电站",
+            "路侧停车位", "金融", "银行", "ATM", "信用社", "投资理财", "典当行",
+            "房地产", "写字楼", "住宅区", "宿舍", "公司企业", "公司", "园区", "农林园艺",
+            "厂矿", "政府机构", "中央机构", "各级政府", "行政单位", "公检法机构",
+            "涉外机构", "党派团体", "福利机构", "政治教育机构", "出入口", "高速公路出口",
+            "高速公路入口", "机场出口", "机场入口", "车站出口", "车站入口", "门",
+            "停车场出入口", "自然地物", "岛屿", "山峰", "水系"]
+
+    base_url = ("http://api.map.baidu.com/place/v2/search?"
+                "output=json&page_size=20&scope=2")
+
+    # 初始化方法
+    def __init__(self, baidu_ak, area_name="海口", tag="交通设施"):
+        # 文档字符串
+        '''
+        Initialize a new instance of the BaiduPoiSpider.
+
+        :Args:
+         - baidu_ak : an str of ak of Baidu Web Place API.
+         - area_name : a str of Chinese area name which data are located in.
+         - tag : a str of type tag of baidu poi data. Please refer to Baidu API
+         WebSite for all defined type tags.
+
+        '''
+        # 方法实现
+        if tag not in self.LEGAL_TAGS:
+            raise RuntimeError('请求类型TAG指定有误，请输入合法类型TAG')
+        super(BaiduPoiSpider, self).__init__(area_name)
+        self.tag = tag
+        self.ak = baidu_ak
+
+    # HTTP请求头配置方法
+    def config_header(self):
+        # 文档字符串
+        '''
+        Loads BaiduPoiSpider's HTTP Requests Header with random User-Agents.
+
+        :Returns:
+         - a dict of HTTP Requests Header.
+        '''
+        # 方法实现
+        # 可以使用python第三方库fake-useragent实现随机user-agent
+        useragent = random.choice(USER_AGENTS)
+        print('1> user agent:', useragent)
+        return {
+            'Accept': ('text/html,application/xhtml+xml,application/xml;q=0.9,'
+                       'image/webp,image/apng,*/*;q=0.8'),
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Host': 'api.map.baidu.com',
+            'Proxy-Connection': 'keep-alive',
+            'User-Agent': random.choice(USER_AGENTS)
+        }
+
+    # 划分坐标矩形方法
+    def coord_div(self, delta):
+        # 文档字符串
+        '''
+        Divide city coordinates rectangle into multiple small coordinates
+        rectangles, and pack southwest coordiante and northeast coordinate
+        into a list.
+
+        :Args:
+         - delta : a float of length of small rectangle.
+        '''
+        # 方法实现
+        coord_sw, coord_ne = self.city_coord[self.area_name]
+        print(coord_sw, coord_ne)
+        lat_count = int((coord_ne[0]-coord_sw[0])/delta + 1)
+        lng_count = int((coord_ne[1]-coord_sw[1])/delta + 1)
+        print(lat_count, lng_count)
+
+        self.coord_list = list()
+
+        for i in range(0, lat_count):
+            lat = coord_sw[0] + delta*i
+            for j in range(0, lng_count):
+                lng = coord_sw[1] + delta*j
+                small_rect = ','.join([str(lat), str(lng), str(lat+delta), str(lng+delta)])
+                self.coord_list.append(small_rect)
+
+        print(self.coord_list)
+
+    # 爬虫主程序
+    def run(self, ):
+        # 文档字符串
+        '''
+        Main spider method of BaiduPoiSpider.
+
+
+        '''
+        self.coord_div(0.03)
+
+        for bound in self.coord_list:
+            print('>> start fetching:', bound)
+            num = 1
+            for page in range(0, self.get_page_num(bound)):
+                print(f'>> {bound} request page {page}')
+                para = {"bounds": bound, "ak": self.ak,
+                        "page_num": page, "query": self.tag}
+                response = self.request_html("GET", self.base_url,
+                                             params=para,
+                                             timeout=TIMEOUT,
+                                             headers=self.config_header())
+                time.sleep(1)
+                if response:
+                    if response.json()['status'] != 0:
+                        raise RuntimeError(response.json()['message'])
+                    self.data.extend(response.json()['results'])
+
+                else:
+                    print(f'>>> Failure getting page {page}.')
+                    # 防止网络不可靠情况下，爬虫一直运行下去：
+                    if num == 1:
+                        num += 1
+                        lastPage = page
+                    else:
+                        if page != lastPage + 1:
+                            num = 1
+                        elif num <= 10:
+                            num += 1
+                            lastPage = page
+                        else:
+                            raise ValueError('NetWork Unavailable!')
+            print('>> end fetching:', bound)
+
+        print(self.data, len(self.data))
+        self.dump_data()
+
+    def get_page_num(self, bound):
+        # 文档字符串
+        '''
+        Get total page number of Baidu Poi given bound para.
+
+        :Returns:
+         - page_num : an int of Baidu POI Response total page num.
+        '''
+        # 方法实现
+        print('2>> Getting page num.')
+        para = {"bounds": bound, "ak": self.ak,
+                "page_num": 0, "query": self.tag}
+        response = self.request_html("GET", self.base_url,
+                                     params=para, timeout=TIMEOUT,
+                                     headers=self.config_header())
+
+        if not response:
+            raise RuntimeError("Request Error!")
+        elif response.json()['status'] != 0:
+            raise RuntimeError(response.json()['message'])
+
+        print('>> Success getting page num.')
+        return (response.json()['total']//20) + 1
+
+
 if __name__ == '__main__':
-    spider = MafengwoQASpider()
+    ak = "XGdhWf1K4iAPGjSrcLA81TsWb2OuUFn0"
+    spider = BaiduPoiSpider(ak)
     spider.run()
