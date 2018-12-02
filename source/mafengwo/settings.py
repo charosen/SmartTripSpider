@@ -1,14 +1,14 @@
-# -*- coding:utf-8
+# -*- coding:utf-8 -*-
 
 '''
-Smart Trip project's spider global variblse settings.
+Smart Trip project's spider global varibles settings.
 '''
 # 数据存储路径和文件名（.csv or .txt）配置变量：
 save_path = "./SmartTripData"
 
 # 数据文件名、同时是MySQL数据库表名、MongoDB数据库的集合名
 # file_name = "HainanResorts"
-file_name = "MafengwoQA"
+file_name = "HainTransportPOIs"
 # file_name = "HainanRestaurants"
 
 # Neo4j数据库配置：
