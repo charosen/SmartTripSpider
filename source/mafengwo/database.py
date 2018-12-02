@@ -4,7 +4,7 @@
 
 # 模块字符串：
 '''
-Defines a Data Saver classes allow users to save all resorts infos data fetched
+Defines a Data Saver classes allow users to save all trip infos data fetched
 from different website.
 '''
 
@@ -78,10 +78,12 @@ class BaseSaver(object):
         '''
         Initialize an instance of BaseSaver.
 
+        Connect to a kind of database specified by `save_mode` param.
+
         :Args:
          - save_mode : a str of database to save data in.
-         - create_sql : a str of table creating sql statement for MySQL
-           database.
+         - create_sql (deprecated): a str of table creating sql statement for
+         MySQL database.
 
         '''
         # 方法实现
@@ -109,7 +111,9 @@ class BaseSaver(object):
     def data_save(self, *file_name_iter):
         # 文档字符串
         '''
-        Saves spider fetched data into different databases.
+        Reads from multiple spider fetched data json files,
+        and save them into different databases.
+
         Wipes out the old data and saves the new fetched ones.
 
         :Args:
